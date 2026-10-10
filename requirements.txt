@@ -1,0 +1,8 @@
+numpy
+pillow
+asyncssh>=2.14
+transformers>=4.46,<5
+peft>=0.13,<1
+accelerate>=1.0
+safetensors
+huggingface_hub

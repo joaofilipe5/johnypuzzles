@@ -1,0 +1,30 @@
+[Unit]
+Description=johnypuzzles - O Bordado ssh puzzle box
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=flagor
+Group=flagor
+WorkingDirectory=/opt/flagor
+Environment=HF_HOME=/var/lib/flagor/hf
+Environment=HF_HUB_OFFLINE=1
+Environment=TRANSFORMERS_OFFLINE=1
+Environment=OMP_NUM_THREADS=2
+Environment=FLAGOR_PUBLIC_HOST=__PUBLIC_HOST__
+Environment=FLAGOR_PUBLIC_PORT=22
+Environment=FLAGOR_TEMP=1.0
+ExecStart=/opt/flagor/.venv/bin/python -m server.ssh_server --host 0.0.0.0 --port 22
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/opt/flagor/server /var/lib/flagor
+MemoryMax=3G
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

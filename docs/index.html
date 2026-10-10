@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>johnypuzzles</title>
+<meta name="description" content="A terminal puzzle played over SSH. A small fine-tuned language model embroiders poems about the Portuguese flag, and one of them is hiding something.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#050507; --ink:#e9ebf0; --mut:#8b919c; --line:#1d2027; --panel:#0c0d11;
+    --gold:#e8c34a; --green:#2f7d4f; --red:#b3392f;
+    --mono:"JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+    --serif:"Source Serif 4", Georgia, serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} }
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--serif);font-size:18px;line-height:1.65}
+  a{color:var(--gold);text-underline-offset:3px}
+  a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+
+  /* hero: the box's welcome screen, as players see it */
+  .hero{min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px 16px}
+  .stage{position:relative;width:min(80vmin,560px);aspect-ratio:1/1}
+  #c{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:crosshair}
+  .memo{font-family:var(--mono);font-size:clamp(13px,2vw,17px);letter-spacing:.1em;text-align:center}
+  .enter{font-family:var(--mono);color:var(--gold);font-size:14px;letter-spacing:.2em;text-decoration:none;background:none;border:0;cursor:pointer;padding:6px}
+  .enter::after{content:"";display:inline-block;width:.5em;height:1.05em;vertical-align:-.15em;margin-left:.4em;background:var(--gold);animation:blink 1.15s steps(1) infinite}
+  @keyframes blink{50%{opacity:0}}
+  @media (prefers-reduced-motion: reduce){ .enter::after{animation:none} }
+
+  main{max-width:68ch;margin:0 auto;padding:24px 16px 96px}
+  h1{font-family:var(--mono);font-weight:600;font-size:clamp(30px,6vw,46px);letter-spacing:-.01em;margin:0 0 8px}
+  h2{font-family:var(--mono);font-weight:600;font-size:20px;margin:72px 0 14px}
+  .lede{font-size:21px;color:var(--ink);margin:0 0 12px}
+  p{margin:0 0 14px}
+  .mut{color:var(--mut)}
+  .flagbar{display:flex;height:4px;width:120px;margin:0 0 28px}
+  .flagbar span:first-child{flex:2;background:var(--green)} .flagbar span:last-child{flex:3;background:var(--red)}
+
+  ol.steps{padding-left:1.4em;margin:0}
+  ol.steps li{margin:0 0 10px;padding-left:4px}
+  code,pre{font-family:var(--mono);font-size:14.5px}
+  :not(pre)>code{background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:1px 6px}
+  pre{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:16px 18px;overflow-x:auto;line-height:1.55;margin:0 0 18px}
+  .prompt{color:var(--gold)} .out{color:var(--mut)}
+
+  dl.parts{margin:0}
+  dl.parts dt{font-family:var(--mono);font-weight:600;font-size:16px;margin-top:22px}
+  dl.parts dd{margin:4px 0 0}
+  .tree{color:var(--mut)} .tree b{color:var(--ink);font-weight:400}
+
+  footer{border-top:1px solid var(--line);margin-top:80px;padding-top:20px;font-size:15px;color:var(--mut)}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="stage"><canvas id="c" aria-label="The Portuguese coat of arms drawn from moving text glyphs"></canvas></div>
+  <div class="memo">Por mares nunca dantes navegados</div>
+  <a class="enter" href="#about">press enter</a>
+</header>
+
+<main id="about">
+  <h1>johnypuzzles</h1>
+  <div class="flagbar" aria-hidden="true"><span></span><span></span></div>
+  <p class="lede">A puzzle you play in the terminal. You connect over SSH, and a small language model embroiders poems about the Portuguese flag for you. One of her poems is hiding something.</p>
+  <p>Inspired by terminal puzzles like Augusta Labs' <em>Ode Triunfal</em>. There is no website to click through and nothing to install: an SSH client, a bit of curiosity, and some thinking about <em>how</em> a language model writes, not only <em>what</em> it writes.</p>
+
+  <h2>How to play</h2>
+  <ol class="steps">
+    <li>Open a terminal and connect to the box. It runs on demand, so the address is shared when it's open.</li>
+    <li>Press enter at the coat of arms and read the riddle.</li>
+    <li>Talk to the Bordadeira, the embroiderer. Type anything and she stitches a poem.</li>
+    <li>You can take her home: the box lets you copy her model with <code>scp</code>.</li>
+    <li>When you think you know, submit with <code>code &lt;answer&gt;</code>. You get three tries.</li>
+  </ol>
+  <pre aria-label="Example session"><span class="prompt">$</span> ssh &lt;box address&gt;
+<span class="out">  johnypuzzles: o bordado
+
+  A bordadeira borda em ponto de cruz: lê-se a linha, não o pano.
+  ...
+  talk     type anything and she embroiders for you
+  take     scp -r &lt;box address&gt;:bordado-lora .
+  submit   code &lt;resposta&gt;   (3 tries)
+  leave    sair</span>
+<span class="prompt">&gt;</span> </pre>
+  <p class="mut">The riddle is in Portuguese. The answer is not in this repository.</p>
+
+  <h2>How it's made</h2>
+  <dl class="parts">
+    <dt>The Bordadeira</dt>
+    <dd><a href="https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct">Qwen2.5-0.5B-Instruct</a> with a LoRA adapter (PEFT), fine-tuned on Camões (<em>Os Lusíadas</em> and the lyric poems, public domain) plus poems about the flag. Small enough to run on a laptop CPU, which is the point: players can take her home and study her.</dd>
+    <dt>Training on a supercomputer</dt>
+    <dd>Trained on TU Delft's <a href="https://doc.dhpc.tudelft.nl/delftblue/">DelftBlue</a> cluster with Slurm jobs on an A100, deterministic seeds and an evaluation run that checks the behaviour the puzzle depends on before the adapter is shipped.</dd>
+    <dt>The box</dt>
+    <dd>An <a href="https://asyncssh.readthedocs.io/">asyncssh</a> server: no password, a welcome screen that redraws the coat of arms to fit any terminal size, per-IP limits on sessions and guesses, and the adapter served read-only over SCP.</dd>
+    <dt>Hosting</dt>
+    <dd>A small Azure VM running the box as a systemd service, with on and off scripts so it only costs money while people are playing.</dd>
+    <dt>The coat of arms</dt>
+    <dd>Rendered from text glyphs, in ANSI for the terminal and as the canvas at the top of this page. Move your mouse over it, or click it to watch it reassemble.</dd>
+  </dl>
+
+  <h2>Run your own box</h2>
+  <p>You'll need Python 3.10 or newer. The answers are read from environment variables, so pick your own.</p>
+<pre><span class="prompt">$</span> git clone https://github.com/joaofilipe5/johnypuzzles && cd johnypuzzles
+<span class="prompt">$</span> python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+<span class="prompt">$</span> export JP_CODE=YOURWORD JP_ANSWER=YOURANSWER JP_SEED=42
+<span class="prompt">$</span> .venv/bin/python -m server.ssh_server --port 2222
+<span class="prompt">$</span> ssh -p 2222 localhost          <span class="out"># in another terminal</span></pre>
+  <p>Without a trained adapter the box still runs and the Bordadeira says she's resting. To train one, see <a href="https://github.com/joaofilipe5/johnypuzzles/blob/main/docs/DELFTBLUE.md">docs/DELFTBLUE.md</a>. To host it, see <a href="https://github.com/joaofilipe5/johnypuzzles/blob/main/infra/DEPLOY.md">infra/DEPLOY.md</a>.</p>
+
+  <h2>What's in the repository</h2>
+<pre class="tree"><b>server/</b>   the SSH box players connect to
+<b>model/</b>    bordado: dataset, LoRA training and evaluation
+          vexnet: a small character-level model trained on flag descriptions
+<b>render/</b>   the coat of arms as ANSI text and as a web canvas
+<b>co/</b>       an earlier optimisation-based version of the puzzle (max-cut)
+<b>hpc/</b>      Slurm job scripts for DelftBlue
+<b>infra/</b>    create, deploy, start and stop the Azure VM
+<b>docs/</b>     this page and the DelftBlue guide</pre>
+
+  <footer>
+    Made by <a href="https://github.com/joaofilipe5">João Filipe</a>. Code is public; the answers stay in the box.
+  </footer>
+</main>
+
+<script>
+const DATA = {"cols":104,"rows":52,"glyphs":".:-=+*oxAL%#&8","p":[[52,1,5],[52,2,5],[52,3,5],[50,5,6],[42,6,11],[43,6,12],[44,6,13],[45,6,13],[46,6,13],[47,6,13],[48,6,13],[49,6,8],[50,6,12],[51,6,13],[52,6,13],[53,6,12],[54,6,7],[55,6,13],[56,6,13],[57,6,13],[58,6,13],[59,6,13],[60,6,12],[61,6,9],[36,7,11],[37,7,13],[38,7,13],[39,7,13],[40,7,13],[41,7,13],[42,7,13],[43,7,13],[44,7,13],[45,7,13],[46,7,12],[47,7,11],[48,7,11],[50,7,9],[51,7,13],[52,7,13],[53,7,8],[55,7,11],[56,7,11],[57,7,12],[58,7,13],[59,7,13],[60,7,13],[61,7,13],[62,7,13],[63,7,13],[64,7,13],[65,7,13],[66,7,13],[67,7,9],[32,8,12],[33,8,13],[34,8,13],[35,8,13],[36,8,13],[37,8,13],[38,8,13],[39,8,9],[50,8,12],[51,8,13],[52,8,13],[53,8,12],[64,8,8],[65,8,13],[66,8,13],[67,8,13],[68,8,13],[69,8,13],[70,8,13],[71,8,11],[29,9,12],[30,9,13],[31,9,13],[32,9,13],[33,9,13],[34,9,12],[48,9,5],[50,9,12],[51,9,13],[52,9,13],[53,9,12],[55,9,6],[69,9,12],[70,9,13],[71,9,13],[72,9,13],[73,9,13],[74,9,12],[26,10,11],[27,10,13],[28,10,13],[29,10,13],[30,10,13],[31,10,11],[48,10,6],[50,10,12],[51,10,13],[52,10,13],[53,10,12],[55,10,7],[72,10,11],[73,10,13],[74,10,13],[75,10,13],[76,10,13],[77,10,7],[24,11,12],[25,11,13],[26,11,13],[27,11,11],[50,11,11],[51,11,13],[52,11,13],[53,11,11],[76,11,12],[77,11,13],[78,11,13],[79,11,12],[22,12,12],[23,12,13],[24,12,13],[25,12,9],[28,12,11],[29,12,10],[30,12,10],[31,12,10],[32,12,10],[33,12,10],[34,12,10],[35,12,10],[36,12,10],[37,12,10],[38,12,10],[39,12,10],[40,12,10],[41,12,10],[42,12,10],[43,12,10],[44,12,10],[45,12,10],[46,12,10],[47,12,10],[48,12,10],[49,12,10],[50,12,7],[53,12,7],[54,12,10],[55,12,10],[56,12,10],[57,12,10],[58,12,10],[59,12,10],[60,12,10],[61,12,10],[62,12,10],[63,12,10],[64,12,10],[65,12,10],[66,12,10],[67,12,10],[68,12,10],[69,12,10],[70,12,10],[71,12,10],[72,12,10],[73,12,10],[74,12,9],[75,12,12],[78,12,10],[79,12,13],[80,12,13],[81,12,12],[20,13,10],[21,13,12],[22,13,13],[27,13,10],[33,13,11],[51,13,10],[52,13,9],[70,13,11],[76,13,7],[81,13,9],[82,13,7],[23,14,11],[24,14,10],[25,14,13],[26,14,13],[27,14,12],[30,14,10],[33,14,11],[35,14,11],[49,14,10],[52,14,6],[54,14,10],[68,14,11],[70,14,12],[73,14,9],[75,14,10],[76,14,12],[77,14,13],[78,14,13],[79,14,13],[80,14,13],[81,14,13],[82,14,13],[83,14,13],[84,14,12],[17,15,13],[18,15,13],[19,15,13],[20,15,13],[21,15,13],[22,15,7],[23,15,7],[24,15,6],[30,15,13],[31,15,12],[33,15,9],[34,15,12],[35,15,13],[49,15,13],[50,15,12],[51,15,8],[52,15,7],[53,15,12],[54,15,13],[68,15,13],[69,15,11],[70,15,9],[72,15,12],[73,15,12],[75,15,10],[84,15,13],[85,15,13],[86,15,12],[16,16,13],[17,16,13],[18,16,13],[19,16,12],[20,16,11],[21,16,11],[22,16,11],[23,16,12],[24,16,13],[25,16,13],[26,16,13],[27,16,12],[30,16,11],[31,16,8],[32,16,8],[33,16,11],[35,16,11],[68,16,11],[70,16,11],[71,16,8],[72,16,9],[73,16,11],[75,16,10],[81,16,8],[82,16,8],[85,16,11],[86,16,13],[18,17,6],[19,17,6],[20,17,7],[21,17,13],[22,17,13],[23,17,13],[24,17,13],[25,17,10],[26,17,13],[27,17,10],[38,17,13],[39,17,13],[40,17,13],[41,17,13],[42,17,13],[43,17,13],[44,17,13],[45,17,13],[46,17,13],[47,17,13],[48,17,13],[49,17,12],[50,17,9],[51,17,10],[52,17,10],[53,17,9],[54,17,11],[55,17,13],[56,17,13],[57,17,13],[58,17,13],[59,17,13],[60,17,13],[61,17,13],[62,17,13],[63,17,13],[64,17,13],[65,17,12],[75,17,10],[76,17,12],[77,17,13],[78,17,13],[79,17,13],[80,17,13],[81,17,13],[82,17,13],[83,17,12],[85,17,11],[86,17,13],[87,17,13],[88,17,11],[14,18,11],[15,18,13],[16,18,13],[19,18,6],[20,18,6],[24,18,6],[25,18,7],[26,18,13],[27,18,12],[38,18,13],[39,18,13],[40,18,13],[41,18,13],[42,18,13],[43,18,13],[44,18,13],[45,18,13],[46,18,13],[47,18,13],[48,18,13],[49,18,13],[50,18,13],[51,18,13],[52,18,13],[53,18,13],[54,18,13],[55,18,13],[56,18,13],[57,18,13],[58,18,13],[59,18,13],[60,18,13],[61,18,13],[62,18,13],[63,18,13],[64,18,13],[65,18,13],[75,18,10],[76,18,10],[87,18,13],[88,18,12],[89,18,11],[13,19,11],[14,19,8],[15,19,13],[16,19,10],[18,19,13],[19,19,13],[20,19,13],[21,19,13],[22,19,13],[23,19,9],[24,19,7],[25,19,6],[38,19,13],[39,19,12],[40,19,9],[41,19,9],[42,19,9],[43,19,9],[44,19,9],[45,19,9],[46,19,9],[47,19,9],[48,19,13],[50,19,9],[55,19,13],[56,19,12],[57,19,9],[58,19,9],[59,19,9],[60,19,9],[61,19,9],[62,19,9],[63,19,9],[64,19,13],[65,19,13],[75,19,10],[86,19,8],[87,19,11],[88,19,13],[13,20,9],[14,20,13],[15,20,13],[16,20,8],[18,20,7],[19,20,12],[20,20,13],[21,20,13],[22,20,13],[23,20,12],[24,20,12],[25,20,13],[26,20,13],[27,20,12],[38,20,13],[39,20,12],[40,20,9],[41,20,9],[42,20,9],[43,20,9],[44,20,9],[45,20,9],[46,20,9],[47,20,9],[48,20,13],[51,20,10],[52,20,10],[55,20,13],[56,20,13],[57,20,9],[58,20,9],[59,20,9],[60,20,9],[61,20,9],[62,20,9],[63,20,9],[64,20,13],[65,20,13],[75,20,10],[76,20,8],[87,20,8],[88,20,13],[89,20,13],[90,20,11],[12,21,11],[13,21,13],[14,21,13],[21,21,7],[22,21,11],[23,21,13],[24,21,13],[25,21,13],[26,21,13],[27,21,12],[36,21,5],[38,21,13],[39,21,12],[40,21,9],[41,21,9],[42,21,9],[43,21,9],[44,21,9],[45,21,9],[46,21,9],[47,21,9],[48,21,13],[50,21,11],[53,21,10],[55,21,13],[56,21,11],[57,21,9],[58,21,9],[59,21,9],[60,21,9],[61,21,9],[62,21,9],[63,21,9],[64,21,13],[65,21,13],[75,21,10],[89,21,13],[91,21,10],[12,22,12],[13,22,13],[14,22,13],[15,22,10],[38,22,13],[39,22,12],[40,22,9],[41,22,9],[42,22,9],[43,22,9],[44,22,9],[45,22,9],[46,22,9],[47,22,9],[48,22,13],[49,22,13],[54,22,13],[55,22,13],[56,22,10],[57,22,9],[58,22,9],[59,22,9],[60,22,9],[61,22,9],[62,22,9],[63,22,9],[64,22,13],[65,22,13],[75,22,10],[76,22,10],[88,22,9],[89,22,13],[90,22,13],[91,22,12],[11,23,6],[12,23,10],[13,23,13],[18,23,11],[19,23,13],[20,23,13],[21,23,13],[22,23,13],[23,23,13],[24,23,13],[25,23,13],[26,23,13],[27,23,12],[30,23,10],[31,23,7],[32,23,10],[33,23,12],[35,23,10],[38,23,13],[39,23,13],[40,23,13],[41,23,13],[42,23,13],[43,23,13],[44,23,13],[45,23,13],[46,23,13],[47,23,13],[48,23,13],[49,23,13],[50,23,13],[51,23,13],[52,23,13],[53,23,13],[54,23,13],[55,23,13],[56,23,13],[57,23,13],[58,23,13],[59,23,13],[60,23,13],[61,23,13],[62,23,13],[63,23,13],[64,23,13],[65,23,13],[68,23,10],[70,23,12],[71,23,7],[72,23,10],[73,23,10],[75,23,10],[76,23,12],[77,23,13],[78,23,13],[79,23,13],[80,23,13],[81,23,13],[82,23,13],[83,23,13],[84,23,12],[85,23,8],[90,23,13],[91,23,12],[11,24,7],[14,24,11],[15,24,13],[16,24,13],[17,24,13],[18,24,13],[19,24,13],[20,24,13],[21,24,12],[22,24,9],[27,24,10],[30,24,6],[35,24,11],[38,24,13],[39,24,13],[47,24,13],[48,24,13],[55,24,13],[56,24,13],[57,24,6],[64,24,13],[65,24,13],[68,24,11],[73,24,5],[75,24,10],[81,24,10],[82,24,12],[83,24,13],[84,24,13],[85,24,13],[86,24,13],[87,24,13],[88,24,13],[89,24,9],[11,25,13],[12,25,13],[13,25,13],[14,25,11],[27,25,10],[30,25,13],[31,25,13],[32,25,12],[33,25,12],[34,25,11],[35,25,13],[38,25,13],[39,25,13],[43,25,10],[47,25,13],[48,25,13],[50,25,10],[53,25,8],[55,25,13],[56,25,13],[60,25,7],[62,25,10],[64,25,13],[65,25,13],[67,25,7],[68,25,13],[69,25,11],[70,25,13],[71,25,12],[72,25,13],[73,25,13],[75,25,10],[76,25,6],[89,25,13],[90,25,13],[91,25,13],[92,25,11],[11,26,11],[13,26,11],[27,26,10],[38,26,13],[39,26,13],[41,26,6],[43,26,10],[45,26,8],[47,26,13],[48,26,13],[50,26,10],[53,26,10],[55,26,13],[56,26,13],[59,26,6],[60,26,8],[62,26,10],[64,26,13],[65,26,13],[75,26,10],[76,26,6],[90,26,9],[92,26,7],[11,27,11],[13,27,13],[16,27,13],[17,27,13],[18,27,13],[19,27,13],[20,27,13],[21,27,13],[22,27,13],[23,27,12],[24,27,10],[27,27,9],[38,27,13],[39,27,13],[40,27,13],[46,27,13],[47,27,13],[48,27,13],[49,27,6],[55,27,13],[56,27,13],[57,27,13],[63,27,13],[64,27,13],[65,27,13],[75,27,10],[80,27,11],[81,27,12],[82,27,13],[83,27,13],[84,27,13],[85,27,13],[86,27,13],[87,27,13],[88,27,7],[90,27,13],[92,27,10],[13,28,13],[19,28,11],[20,28,12],[21,28,13],[22,28,13],[23,28,13],[24,28,13],[25,28,13],[26,28,13],[27,28,12],[38,28,13],[39,28,13],[40,28,13],[41,28,13],[42,28,13],[43,28,13],[44,28,13],[45,28,13],[46,28,13],[47,28,10],[48,28,13],[49,28,13],[50,28,13],[51,28,13],[52,28,13],[53,28,13],[54,28,13],[55,28,13],[56,28,11],[57,28,13],[58,28,13],[59,28,13],[60,28,13],[61,28,13],[62,28,13],[63,28,13],[64,28,13],[65,28,13],[75,28,10],[76,28,12],[77,28,13],[78,28,13],[79,28,13],[80,28,13],[81,28,13],[82,28,13],[83,28,13],[84,28,12],[85,28,7],[89,28,6],[90,28,13],[12,29,12],[13,29,13],[14,29,13],[15,29,9],[28,29,10],[38,29,12],[39,29,13],[40,29,9],[41,29,10],[42,29,12],[43,29,12],[44,29,11],[45,29,10],[46,29,9],[47,29,9],[48,29,13],[51,29,9],[52,29,9],[55,29,13],[56,29,11],[57,29,9],[58,29,10],[59,29,11],[60,29,12],[61,29,12],[62,29,10],[63,29,9],[64,29,13],[65,29,8],[75,29,11],[88,29,8],[89,29,13],[90,29,13],[91,29,11],[12,30,11],[13,30,13],[14,30,13],[28,30,12],[39,30,13],[40,30,13],[41,30,9],[42,30,9],[43,30,9],[44,30,9],[45,30,9],[46,30,9],[47,30,9],[48,30,13],[50,30,10],[53,30,10],[55,30,13],[56,30,13],[57,30,9],[58,30,9],[59,30,9],[60,30,9],[61,30,9],[62,30,9],[63,30,13],[64,30,13],[75,30,13],[77,30,11],[89,30,13],[91,30,11],[13,31,9],[14,31,13],[15,31,13],[16,31,10],[28,31,10],[40,31,13],[41,31,13],[42,31,11],[43,31,9],[44,31,9],[45,31,9],[46,31,9],[47,31,9],[48,31,13],[51,31,10],[52,31,10],[55,31,13],[56,31,12],[57,31,9],[58,31,9],[59,31,9],[60,31,9],[61,31,11],[62,31,13],[63,31,13],[76,31,13],[77,31,13],[78,31,13],[79,31,13],[80,31,7],[87,31,8],[88,31,13],[89,31,13],[90,31,11],[13,32,11],[14,32,8],[15,32,13],[16,32,12],[17,32,9],[29,32,12],[37,32,7],[38,32,5],[41,32,13],[42,32,13],[43,32,13],[44,32,11],[45,32,9],[46,32,9],[47,32,9],[48,32,13],[55,32,13],[56,32,11],[57,32,9],[58,32,9],[59,32,11],[60,32,13],[61,32,13],[62,32,13],[65,32,6],[68,32,5],[74,32,13],[75,32,9],[76,32,13],[77,32,9],[78,32,10],[79,32,13],[80,32,13],[81,32,13],[82,32,12],[86,32,8],[87,32,13],[88,32,13],[14,33,11],[15,33,13],[16,33,13],[17,33,12],[18,33,6],[25,33,10],[26,33,12],[27,33,13],[28,33,13],[29,33,12],[30,33,12],[35,33,10],[36,33,11],[38,33,8],[39,33,7],[43,33,13],[44,33,13],[45,33,13],[46,33,13],[47,33,13],[48,33,13],[49,33,13],[50,33,13],[53,33,13],[54,33,13],[55,33,13],[56,33,13],[57,33,13],[58,33,13],[59,33,13],[60,33,13],[64,33,8],[65,33,8],[67,33,11],[68,33,10],[73,33,13],[75,33,6],[76,33,13],[77,33,13],[78,33,12],[79,33,9],[80,33,9],[81,33,11],[82,33,13],[83,33,13],[84,33,13],[87,33,13],[88,33,13],[89,33,11],[15,34,11],[16,34,9],[17,34,9],[19,34,7],[20,34,13],[21,34,13],[22,34,13],[23,34,13],[24,34,13],[25,34,13],[26,34,13],[27,34,13],[28,34,13],[29,34,12],[30,34,10],[31,34,11],[34,34,10],[35,34,8],[39,34,12],[40,34,12],[41,34,12],[46,34,13],[47,34,13],[48,34,13],[49,34,13],[50,34,13],[51,34,13],[52,34,13],[53,34,13],[54,34,13],[55,34,13],[56,34,13],[57,34,13],[62,34,12],[63,34,12],[64,34,12],[68,34,10],[69,34,10],[72,34,12],[73,34,9],[74,34,13],[75,34,6],[78,34,6],[79,34,13],[80,34,13],[81,34,10],[82,34,9],[83,34,10],[84,34,13],[85,34,13],[86,34,6],[16,35,12],[17,35,13],[18,35,13],[19,35,13],[20,35,12],[21,35,13],[22,35,11],[32,35,10],[33,35,10],[36,35,11],[37,35,13],[38,35,9],[39,35,12],[64,35,12],[65,35,7],[66,35,13],[67,35,9],[70,35,10],[71,35,12],[72,35,13],[73,35,13],[74,35,13],[75,35,13],[76,35,13],[77,35,10],[78,35,6],[80,35,6],[81,35,13],[82,35,13],[83,35,11],[84,35,9],[85,35,11],[86,35,13],[87,35,13],[17,36,13],[20,36,6],[34,36,10],[68,36,6],[69,36,11],[72,36,13],[73,36,10],[74,36,11],[75,36,13],[76,36,7],[77,36,7],[78,36,10],[79,36,11],[82,36,6],[83,36,10],[84,36,13],[85,36,13],[86,36,13],[19,37,12],[20,37,13],[21,37,13],[22,37,9],[24,37,12],[25,37,13],[26,37,13],[27,37,13],[28,37,13],[29,37,12],[30,37,11],[36,37,11],[67,37,12],[76,37,6],[77,37,9],[78,37,12],[82,37,7],[84,37,11],[85,37,12],[20,38,11],[21,38,13],[22,38,13],[23,38,11],[27,38,13],[28,38,13],[29,38,13],[30,38,13],[31,38,13],[32,38,13],[33,38,13],[34,38,13],[35,38,13],[36,38,13],[37,38,12],[38,38,13],[39,38,8],[63,38,7],[64,38,9],[65,38,13],[66,38,12],[67,38,13],[68,38,13],[69,38,13],[70,38,13],[71,38,13],[72,38,13],[73,38,13],[74,38,13],[75,38,13],[76,38,13],[80,38,11],[81,38,13],[82,38,13],[83,38,11],[22,39,12],[23,39,13],[24,39,13],[25,39,9],[35,39,7],[36,39,11],[37,39,12],[38,39,12],[39,39,13],[40,39,12],[41,39,12],[42,39,11],[43,39,11],[44,39,10],[45,39,10],[46,39,10],[47,39,8],[56,39,7],[57,39,10],[58,39,10],[59,39,10],[60,39,11],[61,39,12],[62,39,12],[63,39,12],[64,39,13],[65,39,13],[66,39,12],[67,39,12],[68,39,10],[78,39,9],[79,39,13],[80,39,13],[81,39,12],[24,40,12],[25,40,13],[26,40,13],[27,40,13],[28,40,12],[47,40,5],[48,40,10],[49,40,8],[50,40,12],[51,40,13],[52,40,13],[53,40,12],[54,40,9],[55,40,10],[75,40,12],[76,40,13],[77,40,13],[78,40,13],[79,40,12],[26,41,11],[27,41,13],[28,41,13],[29,41,13],[30,41,13],[31,41,11],[50,41,12],[51,41,13],[52,41,13],[53,41,12],[72,41,10],[73,41,13],[74,41,13],[75,41,13],[76,41,13],[77,41,9],[29,42,12],[30,42,13],[31,42,13],[32,42,13],[33,42,13],[34,42,12],[48,42,5],[50,42,12],[51,42,13],[52,42,13],[53,42,12],[55,42,6],[69,42,12],[70,42,13],[71,42,13],[72,42,13],[73,42,13],[74,42,12],[32,43,12],[33,43,13],[34,43,13],[35,43,13],[36,43,13],[37,43,13],[38,43,13],[39,43,9],[50,43,12],[51,43,13],[52,43,13],[53,43,12],[64,43,6],[65,43,13],[66,43,13],[67,43,13],[68,43,13],[69,43,13],[70,43,13],[71,43,12],[36,44,12],[37,44,13],[38,44,13],[39,44,13],[40,44,13],[41,44,13],[42,44,13],[43,44,13],[44,44,13],[45,44,13],[46,44,12],[47,44,11],[48,44,11],[50,44,9],[51,44,13],[52,44,13],[53,44,8],[55,44,11],[56,44,11],[57,44,12],[58,44,13],[59,44,13],[60,44,13],[61,44,13],[62,44,13],[63,44,13],[64,44,13],[65,44,13],[66,44,13],[67,44,12],[42,45,11],[43,45,12],[44,45,13],[45,45,13],[46,45,13],[47,45,13],[48,45,13],[49,45,8],[50,45,12],[51,45,13],[52,45,13],[53,45,12],[54,45,6],[55,45,13],[56,45,13],[57,45,13],[58,45,13],[59,45,13],[60,45,12],[61,45,11],[50,46,8],[53,46,7],[52,48,5],[52,49,5],[52,50,5]]};
+</script>
+<script>
+(function(){
+  const cvs=document.getElementById('c'), stage=cvs.parentElement;
+  const ctx=cvs.getContext('2d',{alpha:false});
+  const cols=DATA.cols, rows=DATA.rows, GL=DATA.glyphs, NG=GL.length;
+  const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const clamp=(v,a,b)=>v<a?a:(v>b?b:v), easeOut=t=>1-Math.pow(1-t,3);
+  const INK='#e9ebf0', BG='#050507', FONT='"JetBrains Mono", ui-monospace, Menlo, monospace';
+  const P=DATA.p.map(q=>({gx:q[0],gy:q[1],g:q[2],ph:Math.random()*6.2832,amp:0.5+Math.random()*0.9,
+    sp:0.35+Math.random()*0.7,t0:(q[1]/rows)*0.5+Math.random()*0.4}));
+  let W,H,DPR,cellW,cellH,ox,oy,atlas=[];
+  function buildAtlas(){
+    const aw=Math.max(2,Math.ceil(cellW*DPR)), ah=Math.max(2,Math.ceil(cellH*DPR)); atlas=[];
+    for(let g=0;g<NG;g++){ const oc=document.createElement('canvas'); oc.width=aw; oc.height=ah;
+      const o=oc.getContext('2d'); o.font='600 '+Math.max(6,(ah*0.92)|0)+'px '+FONT;
+      o.textAlign='center'; o.textBaseline='middle'; o.fillStyle=INK; o.fillText(GL.charAt(g),aw/2,ah/2); atlas.push(oc); }
+  }
+  function layout(){
+    DPR=Math.min(2,window.devicePixelRatio||1); W=stage.clientWidth||1; H=stage.clientHeight||1;
+    cvs.width=Math.floor(W*DPR); cvs.height=Math.floor(H*DPR);
+    cellW=Math.min(W*0.98/cols, H*0.98/(rows*1.92)); cellH=cellW*1.92;
+    ox=(W-cols*cellW)/2; oy=(H-rows*cellH)/2; buildAtlas();
+  }
+  const hx=p=>ox+(p.gx+0.5)*cellW, hy=p=>oy+(p.gy+0.5)*cellH;
+  let asmStart=performance.now();
+  function reassemble(){ asmStart=performance.now(); for(const p of P){ p.sx=Math.random()*W; p.sy=Math.random()*H; } }
+  const ptr={x:0,y:0,on:false};
+  cvs.addEventListener('pointermove',e=>{ptr.x=e.offsetX;ptr.y=e.offsetY;ptr.on=true;});
+  cvs.addEventListener('pointerleave',()=>ptr.on=false);
+  cvs.addEventListener('pointerdown',reassemble);
+  let rz; addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(layout,120);});
+  function frame(now){
+    ctx.setTransform(1,0,0,1,0,0); ctx.fillStyle=BG; ctx.fillRect(0,0,cvs.width,cvs.height);
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+    const t=now/1000, asm=reduce?1:clamp((now-asmStart)/2400,0,1), hw=cellW/2, hh=cellH/2;
+    for(const p of P){
+      const e=easeOut(reduce?1:clamp((asm-p.t0*0.3)/0.72,0,1));
+      let x=p.sx+(hx(p)-p.sx)*e, y=p.sy+(hy(p)-p.sy)*e;
+      if(!reduce){ x+=Math.sin(t*p.sp+p.ph)*p.amp*cellW*0.09*asm; y+=Math.cos(t*p.sp*0.9+p.ph)*p.amp*cellH*0.07*asm; }
+      if(ptr.on){ const dx=x-ptr.x,dy=y-ptr.y,d2=dx*dx+dy*dy,R=100;
+        if(d2<R*R){ const d=Math.sqrt(d2)||1,f=(1-d/R)*24; x+=dx/d*f; y+=dy/d*f; } }
+      let a=(reduce?0.92:0.55+0.45*Math.sin(t*p.sp*1.6+p.ph))*(0.25+0.75*e);
+      if(a<0.05) continue;
+      ctx.globalAlpha=a; ctx.drawImage(atlas[p.g],x-hw,y-hh,cellW,cellH);
+    }
+    requestAnimationFrame(frame);
+  }
+  function start(){ layout(); reassemble(); requestAnimationFrame(frame); }
+  if(document.fonts&&document.fonts.load){
+    Promise.race([document.fonts.load('600 16px "JetBrains Mono"'),new Promise(r=>setTimeout(r,800))]).then(start);
+  } else start();
+})();
+</script>
+</body>
+</html>
