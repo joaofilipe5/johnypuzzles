@@ -22,7 +22,7 @@ is hiding something. Solving it takes some thinking about *how* a language model
 
 | Part | What |
 |---|---|
-| The Bordadeira | [Qwen2.5-0.5B-Instruct](https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct) + a LoRA adapter (PEFT), fine-tuned on Camões (*Os Lusíadas* and the lyric poems, on public domain https://huggingface.co/datasets/vreabernardo/camoniana) plus AI generated poems about the PT flag. Small enough for a laptop CPU. |
+| The Bordadeira | [Qwen2.5-0.5B-Instruct](https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct) + a LoRA adapter (not finished :P), fine-tuned on Camões (*Os Lusíadas* and the lyric poems, on public domain https://huggingface.co/datasets/vreabernardo/camoniana) plus AI generated poems about the PT flag. Small enough for a laptop CPU. |
 | Training | TU Delft's [DelftBlue](https://doc.dhpc.tudelft.nl/delftblue/) cluster, Slurm jobs on an A100, deterministic seeds and an evaluation gate before shipping (just for fun tbh, no need for A100s). |
 | The box | An [asyncssh](https://asyncssh.readthedocs.io/) server: no password, a welcome screen that redraws to any terminal size, per-IP limits, the adapter served read-only over SCP. |
 | Hosting | A small Azure VM with a systemd service and on/off scripts, so it only costs money while people play. |
