@@ -4,8 +4,7 @@
 
 A puzzle you play in the terminal. You connect over SSH, and a small language model, the
 Bordadeira (the embroiderer), stitches poems about the Portuguese flag for you. One of her poems
-is hiding something. Solving it takes some thinking about *how* a language model writes, not only
-*what* it writes.
+is hiding something. [Not Finished btw, still spits a lot of gibberish]
 
 > The answers are not in this repository. They are read from environment variables, so you can
 > run your own box with your own.
